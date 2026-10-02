@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberFinance - Gestão Financeira Inteligente</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#09090b',
+                            card: '#121216',
+                            border: '#27272a',
+                            neon: '#10B981',
+                            purple: '#8B5CF6',
+                            pink: '#EC4899',
+                            darkText: '#f4f4f5',
+                            muted: '#a1a1aa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-panel {
+            background: rgba(18, 18, 22, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(39, 39, 42, 0.6);
+        }
+        .glow-neon {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+    </style>
+</head>
+<body class="bg-cyber-bg text-cyber-darkText min-h-screen font-sans antialiased pb-24 md:pb-8">
+
+    <!-- TOAST DE NOTIFICAÇÃO / ERRO -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- TELA DE AUTENTICAÇÃO (LOGIN / REGISTRO) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-cyber-bg/90 backdrop-blur-xl p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-2xl glow-purple relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-cyber-purple/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-cyber-neon/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-center mb-8 relative z-10">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyber-purple to-cyber-neon text-white text-2xl mb-4 glow-neon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h1 id="auth-title" class="text-2xl font-bold tracking-tight text-white">CyberFinance</h1>
+                <p id="auth-subtitle" class="text-sm text-cyber-muted mt-1">Entre com sua conta para gerenciar suas finanças</p>
+            </div>
+
+            <!-- Formulário -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4 relative z-10">
+                <div id="name-field-container" class="hidden">
+                    <label class="block text-xs font-semibold text-cyber-muted uppercase tracking-wider mb-1">Nome Completo</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-cyber-muted"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="auth-name" placeholder="Seu Nome" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyber-purple transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-cyber-muted uppercase tracking-wider mb-1">E-mail</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-cyber-muted"><i class="fa-solid fa-envelope"></i></span>
+                        <input type="email" id="auth-email" required placeholder="seu@email.com" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyber-purple transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-cyber-muted uppercase tracking-wider mb-1">Senha</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-cyber-muted"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-cyber-purple transition">
+                    </div>
+                </div>
+
+                <div id="auth-error" class="text-red-400 text-xs text-center hidden bg-red-500/10 border border-red-500/20 p-2 rounded-lg"></div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-gradient-to-r from-cyber-purple to-cyber-neon text-white font-semibold rounded-xl shadow-lg hover:opacity-95 transition transform active:scale-[0.99]">
+                    Entrar no Sistema
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm text-cyber-muted relative z-10">
+                <span id="auth-toggle-text">Não tem uma conta?</span>
+                <button type="button" onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-cyber-neon font-medium ml-1 hover:underline">Criar conta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICATIVO PRINCIPAL (OCULTO ATÉ O LOGIN) -->
+    <div id="app-container" class="hidden">
+        <!-- TOPBAR -->
+        <header class="glass-panel border-b border-cyber-border sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyber-purple to-cyber-neon flex items-center justify-center text-white font-bold shadow-md">
+                    <i class="fa-solid fa-wallet text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-cyber-neon font-semibold block">CyberFinance OS</span>
+                    <h1 class="text-base font-bold text-white leading-tight">Painel Financeiro</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:flex flex-col text-right">
+                    <span id="user-display-name" class="text-sm font-semibold text-white">Usuário</span>
+                    <span class="text-xs text-cyber-muted">Conectado ao Firebase</span>
+                </div>
+                <button onclick="logoutUser()" class="p-2 rounded-xl bg-cyber-border/50 text-cyber-muted hover:text-red-400 hover:bg-red-500/10 transition" title="Sair da Conta">
+                    <i class="fa-solid fa-power-off text-base"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- NAVEGAÇÃO SUPERIOR (DESKTOP) -->
+        <nav class="hidden md:flex bg-cyber-card/60 border-b border-cyber-border px-8 py-2 space-x-2 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30" data-tab="dashboard">
+                <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+            </button>
+            <button onclick="switchTab('gastos')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="gastos">
+                <i class="fa-solid fa-receipt"></i><span>Controle de Gastos</span>
+            </button>
+            <button onclick="switchTab('contas')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="contas">
+                <i class="fa-solid fa-file-invoice-dollar"></i><span>Contas a Pagar</span>
+            </button>
+            <button onclick="switchTab('parcelamentos')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="parcelamentos">
+                <i class="fa-solid fa-credit-card"></i><span>Parcelamentos</span>
+            </button>
+            <button onclick="switchTab('assinaturas')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="assinaturas">
+                <i class="fa-solid fa-repeat"></i><span>Assinaturas</span>
+            </button>
+            <button onclick="switchTab('metas')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="metas">
+                <i class="fa-solid fa-bullseye"></i><span>Metas & Economia</span>
+            </button>
+            <button onclick="switchTab('relatorios')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40" data-tab="relatorios">
+                <i class="fa-solid fa-chart-line"></i><span>Relatórios Mensais</span>
+            </button>
+        </nav>
+
+        <!-- CONTAINER DE CONTEÚDO PRINCIPAL -->
+        <main class="max-w-7xl mx-auto p-4 lg:p-8">
+            
+            <!-- ABA 1: DASHBOARD -->
+            <section id="section-dashboard" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-cyber-neon">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wider text-cyber-muted">Saldo Atual</p>
+                                <h3 id="kpi-saldo" class="text-2xl font-bold text-white mt-1">R$ 0,00</h3>
+                            </div>
+                            <div class="p-3 bg-cyber-neon/10 text-cyber-neon rounded-xl"><i class="fa-solid fa-wallet"></i></div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-400">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wider text-cyber-muted">Receitas do Mês</p>
+                                <h3 id="kpi-receitas" class="text-2xl font-bold text-emerald-400 mt-1">R$ 0,00</h3>
+                            </div>
+                            <div class="p-3 bg-emerald-400/10 text-emerald-400 rounded-xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-rose-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wider text-cyber-muted">Despesas do Mês</p>
+                                <h3 id="kpi-despesas" class="text-2xl font-bold text-rose-500 mt-1">R$ 0,00</h3>
+                            </div>
+                            <div class="p-3 bg-rose-500/10 text-rose-500 rounded-xl"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl border-l-4 border-cyber-purple">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wider text-cyber-muted">Economia / Metas</p>
+                                <h3 id="kpi-economia" class="text-2xl font-bold text-cyber-purple mt-1">R$ 0,00</h3>
+                            </div>
+                            <div class="p-3 bg-cyber-purple/10 text-cyber-purple rounded-xl"><i class="fa-solid fa-piggy-bank"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertas de Gastos Excessivos -->
+                <div id="alertas-container" class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start space-x-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl mt-0.5"></i>
+                    <div>
+                        <h4 class="text-sm font-bold text-amber-300">Alerta de Gastos Excessivos Detectado!</h4>
+                        <p id="alerta-texto" class="text-xs text-amber-200/80 mt-0.5">Suas despesas ultrapassaram 80% das receitas cadastradas neste mês.</p>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl lg:col-span-2">
+                        <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-bar text-cyber-purple"></i><span>Fluxo de Caixa Mensal</span>
+                        </h3>
+                        <div class="h-72 relative">
+                            <canvas id="chartFluxo"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-pie text-cyber-neon"></i><span>Gastos por Categoria</span>
+                        </h3>
+                        <div class="h-72 relative flex items-center justify-center">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 2: CONTROLE DE GASTOS -->
+            <section id="section-gastos" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-plus-circle text-cyber-neon"></i><span>Novo Lançamento (Receita ou Despesa)</span>
+                    </h3>
+                    <form onsubmit="adicionarTransacao(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Tipo</label>
+                            <select id="trans-tipo" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon">
+                                <option value="despesa">Despesa (-)</option>
+                                <option value="receita">Receita (+)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Descrição</label>
+                            <input type="text" id="trans-desc" required placeholder="Ex: Uber, Supermercado..." oninput="autoCategorizar(this.value)" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Valor (R$)</label>
+                            <input type="number" step="0.01" id="trans-valor" required placeholder="0.00" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Categoria (Auto)</label>
+                            <select id="trans-categoria" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-neon">
+                                <option value="Alimentação">Alimentação</option>
+                                <option value="Transporte">Transporte</option>
+                                <option value="Moradia">Moradia</option>
+                                <option value="Lazer">Lazer</option>
+                                <option value="Saúde">Saúde</option>
+                                <option value="Assinaturas">Assinaturas</option>
+                                <option value="Salário">Salário</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full py-2.5 bg-cyber-neon text-cyber-bg font-bold rounded-xl shadow-lg hover:opacity-90 transition">
+                                Salvar Transação
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl overflow-hidden">
+                    <h3 class="text-base font-bold text-white mb-4">Histórico de Transações</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-cyber-border text-xs text-cyber-muted uppercase">
+                                    <th class="py-3 px-4">Data</th>
+                                    <th class="py-3 px-4">Descrição</th>
+                                    <th class="py-3 px-4">Categoria</th>
+                                    <th class="py-3 px-4">Tipo</th>
+                                    <th class="py-3 px-4">Valor</th>
+                                    <th class="py-3 px-4 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-transacoes" class="text-sm divide-y divide-cyber-border/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA 3: CONTAS A PAGAR -->
+            <section id="section-contas" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-cyber-purple"></i><span>Adicionar Conta a Pagar</span>
+                    </h3>
+                    <form onsubmit="adicionarContaPagar(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Descrição</label>
+                            <input type="text" id="conta-desc" required placeholder="Ex: Conta de Luz" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-purple">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Valor (R$)</label>
+                            <input type="number" step="0.01" id="conta-valor" required placeholder="0.00" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-purple">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Vencimento</label>
+                            <input type="date" id="conta-venc" required class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-purple">
+                        </div>
+                        <div class="sm:col-span-3 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-cyber-purple text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition">
+                                Cadastrar Conta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-base font-bold text-white mb-4">Contas Pendentes e Vencimentos</h3>
+                    <div id="lista-contas" class="space-y-3"></div>
+                </div>
+            </section>
+
+            <!-- ABA 4: PARCELAMENTOS -->
+            <section id="section-parcelamentos" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-credit-card text-cyber-pink"></i><span>Cadastrar Compra Parcelada</span>
+                    </h3>
+                    <form onsubmit="adicionarParcelamento(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Produto</label>
+                            <input type="text" id="parc-desc" required placeholder="Ex: Notebook" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-pink">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Valor Total (R$)</label>
+                            <input type="number" step="0.01" id="parc-valor" required placeholder="0.00" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-pink">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Qtd Parcelas</label>
+                            <input type="number" id="parc-qtd" required min="2" max="60" value="10" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-pink">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full py-2.5 bg-cyber-pink text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition">
+                                Salvar Parcelamento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-base font-bold text-white mb-4">Acompanhamento de Parcelas</h3>
+                    <div id="lista-parcelamentos" class="space-y-4"></div>
+                </div>
+            </section>
+
+            <!-- ABA 5: ASSINATURAS -->
+            <section id="section-assinaturas" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-repeat text-emerald-400"></i><span>Gerenciar Assinaturas Recorrentes</span>
+                    </h3>
+                    <form onsubmit="adicionarAssinatura(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Serviço</label>
+                            <input type="text" id="ass-desc" required placeholder="Ex: Netflix" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Valor Mensal (R$)</label>
+                            <input type="number" step="0.01" id="ass-valor" required placeholder="0.00" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-400">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full py-2.5 bg-emerald-500 text-cyber-bg font-bold rounded-xl shadow-lg hover:opacity-90 transition">
+                                Adicionar Assinatura
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-base font-bold text-white mb-4">Suas Assinaturas Ativas</h3>
+                    <div id="lista-assinaturas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </section>
+
+            <!-- ABA 6: METAS E ECONOMIA -->
+            <section id="section-metas" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-bullseye text-cyber-purple"></i><span>Definir Nova Meta Financeira</span>
+                    </h3>
+                    <form onsubmit="adicionarMeta(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Nome da Meta</label>
+                            <input type="text" id="meta-desc" required placeholder="Ex: Viagem" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-purple">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-cyber-muted uppercase mb-1">Valor Alvo (R$)</label>
+                            <input type="number" step="0.01" id="meta-valor" required placeholder="0.00" class="w-full bg-cyber-bg/60 border border-cyber-border rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyber-purple">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full py-2.5 bg-cyber-purple text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition">
+                                Criar Meta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl">
+                    <h3 class="text-base font-bold text-white mb-4">Progresso das Metas</h3>
+                    <div id="lista-metas" class="space-y-4"></div>
+                </div>
+            </section>
+
+            <!-- ABA 7: RELATÓRIOS MENSAIS -->
+            <section id="section-relatorios" class="tab-content hidden space-y-6">
+                <div class="glass-panel p-6 rounded-2xl space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-cyber-neon"></i><span>Relatório de Saúde Financeira</span>
+                    </h3>
+                    <div id="relatorio-conteudo" class="text-sm text-cyber-muted space-y-3"></div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BARRA DE NAVEGAÇÃO INFERIOR (MOBILE) -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-cyber-border px-2 py-2 flex justify-around items-center z-40 bg-cyber-bg/95">
+            <button onclick="switchTab('dashboard')" class="mobile-tab-btn flex flex-col items-center text-cyber-purple p-1" data-tab="dashboard">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px] mt-0.5">Início</span>
+            </button>
+            <button onclick="switchTab('gastos')" class="mobile-tab-btn flex flex-col items-center text-cyber-muted p-1" data-tab="gastos">
+                <i class="fa-solid fa-receipt text-lg"></i>
+                <span class="text-[10px] mt-0.5">Gastos</span>
+            </button>
+            <button onclick="switchTab('contas')" class="mobile-tab-btn flex flex-col items-center text-cyber-muted p-1" data-tab="contas">
+                <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+                <span class="text-[10px] mt-0.5">Contas</span>
+            </button>
+            <button onclick="switchTab('parcelamentos')" class="mobile-tab-btn flex flex-col items-center text-cyber-muted p-1" data-tab="parcelamentos">
+                <i class="fa-solid fa-credit-card text-lg"></i>
+                <span class="text-[10px] mt-0.5">Parcelas</span>
+            </button>
+            <button onclick="switchTab('metas')" class="mobile-tab-btn flex flex-col items-center text-cyber-muted p-1" data-tab="metas">
+                <i class="fa-solid fa-bullseye text-lg"></i>
+                <span class="text-[10px] mt-0.5">Metas</span>
+            </button>
+            <button onclick="switchTab('relatorios')" class="mobile-tab-btn flex flex-col items-center text-cyber-muted p-1" data-tab="relatorios">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px] mt-0.5">Relatórios</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- FIREBASE & LOGICA DA APLICAÇÃO -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkp7GGPiI5cSOPjmgHAhTlkpXmmW-15GE",
+            authDomain: "finance-pro-24aae.firebaseapp.com",
+            projectId: "finance-pro-24aae",
+            storageBucket: "finance-pro-24aae.firebasestorage.app",
+            messagingSenderId: "869200373783",
+            appId: "1:869200373783:web:4ba66e5e041618f44d9452"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.currentUser = null;
+        window.db = db;
+        window.auth = auth;
+        window.appData = {
+            transacoes: [],
+            contas: [],
+            parcelamentos: [],
+            assinaturas: [],
+            metas: []
+        };
+
+        let isSignUpMode = false;
+        let chartFluxoInstance = null;
+        let chartCatInstance = null;
+
+        function mostrarToast(mensagem, tipo = 'erro') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border text-sm font-semibold flex items-center space-x-2 transition transform translate-y-2 opacity-0 ${tipo === 'erro' ? 'bg-red-500/20 border-red-500/40 text-red-300' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'}`;
+            toast.innerHTML = `<i class="fa-solid ${tipo === 'erro' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i><span>${mensagem}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                window.currentUser = user;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                document.getElementById('user-display-name').textContent = user.displayName || user.email.split('@')[0];
+                await carregarDadosDoFirebase();
+                atualizarInterfaceCompleta();
+            } else {
+                window.currentUser = null;
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-container').classList.add('hidden');
+            }
+        });
+
+        window.toggleAuthMode = function() {
+            isSignUpMode = !isSignUpMode;
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const nameContainer = document.getElementById('name-field-container');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleBtn = document.getElementById('auth-toggle-btn');
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            if (isSignUpMode) {
+                title.textContent = "Criar Nova Conta";
+                subtitle.textContent = "Preencha os dados abaixo para iniciar";
+                nameContainer.classList.remove('hidden');
+                submitBtn.textContent = "Cadastrar Usuário";
+                toggleText.textContent = "Já tem uma conta?";
+                toggleBtn.textContent = "Fazer login";
+            } else {
+                title.textContent = "CyberFinance";
+                subtitle.textContent = "Entre com sua conta para gerenciar suas finanças";
+                nameContainer.classList.add('hidden');
+                submitBtn.textContent = "Entrar no Sistema";
+                toggleText.textContent = "Não tem uma conta?";
+                toggleBtn.textContent = "Criar conta";
+            }
+        }
+
+        window.handleAuthSubmit = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value;
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            try {
+                if (isSignUpMode) {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    if (name) {
+                        await updateProfile(userCredential.user, { displayName: name });
+                    }
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error("Erro de Autenticação:", error);
+                errDiv.textContent = "Erro: " + (error.message || "Verifique seus dados.");
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        window.logoutUser = async function() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+            }
+        }
+
+        // --- FIRESTORE PERSISTÊNCIA ---
+        async function carregarDadosDoFirebase() {
+            if (!window.currentUser) return;
+            const uid = window.currentUser.uid;
+            
+            try {
+                const collections = ['transacoes', 'contas', 'parcelamentos', 'assinaturas', 'metas'];
+                for (let colName of collections) {
+                    const q = collection(db, 'users', uid, colName);
+                    const querySnapshot = await getDocs(q);
+                    window.appData[colName] = [];
+                    querySnapshot.forEach((docSnap) => {
+                        window.appData[colName].push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                }
+            } catch (e) {
+                console.error("Erro ao carregar dados do Firestore:", e);
+                mostrarToast("Erro ao carregar dados do banco.");
+            }
+        }
+
+        async function salvarNoFirebase(colName, dados) {
+            if (!window.currentUser) return null;
+            const uid = window.currentUser.uid;
+            try {
+                const docRef = await addDoc(collection(db, 'users', uid, colName), dados);
+                return docRef.id;
+            } catch (e) {
+                console.error(`Erro ao salvar em ${colName}:`, e);
+                mostrarToast("Erro ao salvar: " + e.message);
+                return null;
+            }
+        }
+
+        async function deletarDoFirebase(colName, id) {
+            if (!window.currentUser) return;
+            const uid = window.currentUser.uid;
+            try {
+                await deleteDoc(doc(db, 'users', uid, colName, id));
+            } catch (e) {
+                console.error(`Erro ao deletar de ${colName}:`, e);
+                mostrarToast("Erro ao excluir do banco.");
+            }
+        }
+
+        // --- ABAS ---
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/30";
+                } else {
+                    btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 text-cyber-muted hover:text-white hover:bg-cyber-border/40";
+                }
+            });
+
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.className = "mobile-tab-btn flex flex-col items-center text-cyber-purple p-1";
+                } else {
+                    btn.className = "mobile-tab-btn flex flex-col items-center text-cyber-muted p-1";
+                }
+            });
+
+            if (tabId === 'dashboard' || tabId === 'relatorios') {
+                atualizarGraficos();
+            }
+        }
+
+        // --- CATEGORIZAÇÃO INTELIGENTE ---
+        window.autoCategorizar = function(texto) {
+            const txt = texto.toLowerCase();
+            const selectCat = document.getElementById('trans-categoria');
+            if (txt.includes('uber') || txt.includes('99') || txt.includes('posto') || txt.includes('gasolina') || txt.includes('onibus')) {
+                selectCat.value = 'Transporte';
+            } else if (txt.includes('mercado') || txt.includes('supermercado') || txt.includes('ifood') || txt.includes('padaria') || txt.includes('restaurante')) {
+                selectCat.value = 'Alimentação';
+            } else if (txt.includes('aluguel') || txt.includes('condominio') || txt.includes('luz') || txt.includes('agua') || txt.includes('internet')) {
+                selectCat.value = 'Moradia';
+            } else if (txt.includes('netflix') || txt.includes('spotify') || txt.includes('amazon') || txt.includes('hbo')) {
+                selectCat.value = 'Assinaturas';
+            } else if (txt.includes('salario') || txt.includes('pix recebido') || txt.includes('pagamento')) {
+                selectCat.value = 'Salário';
+            }
+        }
+
+        // --- AÇÕES ---
+        window.adicionarTransacao = async function(event) {
+            event.preventDefault();
+            const tipo = document.getElementById('trans-tipo').value;
+            const desc = document.getElementById('trans-desc').value;
+            const valor = parseFloat(document.getElementById('trans-valor').value);
+            const categoria = document.getElementById('trans-categoria').value;
+            const data = new Date().toISOString().split('T')[0];
+
+            const nova = { tipo, desc, valor, categoria, data };
+            const id = await salvarNoFirebase('transacoes', nova);
+            if (id) {
+                nova.id = id;
+                window.appData.transacoes.push(nova);
+                document.getElementById('trans-desc').value = '';
+                document.getElementById('trans-valor').value = '';
+                atualizarInterfaceCompleta();
+                mostrarToast("Transação salva com sucesso!", "sucesso");
+            }
+        }
+
+        window.removerTransacao = async function(id) {
+            await deletarDoFirebase('transacoes', id);
+            window.appData.transacoes = window.appData.transacoes.filter(t => t.id !== id);
+            atualizarInterfaceCompleta();
+        }
+
+        window.adicionarContaPagar = async function(event) {
+            event.preventDefault();
+            const desc = document.getElementById('conta-desc').value;
+            const valor = parseFloat(document.getElementById('conta-valor').value);
+            const vencimento = document.getElementById('conta-venc').value;
+            const nova = { desc, valor, vencimento, pago: false };
+
+            const id = await salvarNoFirebase('contas', nova);
+            if (id) {
+                nova.id = id;
+                window.appData.contas.push(nova);
+                document.getElementById('conta-desc').value = '';
+                document.getElementById('conta-valor').value = '';
+                document.getElementById('conta-venc').value = '';
+                atualizarInterfaceCompleta();
+                mostrarToast("Conta cadastrada!", "sucesso");
+            }
+        }
+
+        window.alternarContaPagar = async function(id) {
+            const conta = window.appData.contas.find(c => c.id === id);
+            if (conta) {
+                conta.pago = !conta.pago;
+                const uid = window.currentUser.uid;
+                await updateDoc(doc(db, 'users', uid, 'contas', id), { pago: conta.pago });
+                atualizarInterfaceCompleta();
+            }
+        }
+
+        window.removerContaPagar = async function(id) {
+            await deletarDoFirebase('contas', id);
+            window.appData.contas = window.appData.contas.filter(c => c.id !== id);
+            atualizarInterfaceCompleta();
+        }
+
+        window.adicionarParcelamento = async function(event) {
+            event.preventDefault();
+            const desc = document.getElementById('parc-desc').value;
+            const valorTotal = parseFloat(document.getElementById('parc-valor').value);
+            const qtd = parseInt(document.getElementById('parc-qtd').value);
+            const valorParcela = valorTotal / qtd;
+            const novo = { desc, valorTotal, qtd, valorParcela, pagas: 1 };
+
+            const id = await salvarNoFirebase('parcelamentos', novo);
+            if (id) {
+                novo.id = id;
+                window.appData.parcelamentos.push(novo);
+                document.getElementById('parc-desc').value = '';
+                document.getElementById('parc-valor').value = '';
+                atualizarInterfaceCompleta();
+                mostrarToast("Parcelamento salvo!", "sucesso");
+            }
+        }
+
+        window.removerParcelamento = async function(id) {
+            await deletarDoFirebase('parcelamentos', id);
+            window.appData.parcelamentos = window.appData.parcelamentos.filter(p => p.id !== id);
+            atualizarInterfaceCompleta();
+        }
+
+        window.adicionarAssinatura = async function(event) {
+            event.preventDefault();
+            const desc = document.getElementById('ass-desc').value;
+            const valor = parseFloat(document.getElementById('ass-valor').value);
+            const nova = { desc, valor };
+
+            const id = await salvarNoFirebase('assinaturas', nova);
+            if (id) {
+                nova.id = id;
+                window.appData.assinaturas.push(nova);
+                document.getElementById('ass-desc').value = '';
+                document.getElementById('ass-valor').value = '';
+                atualizarInterfaceCompleta();
+                mostrarToast("Assinatura adicionada!", "sucesso");
+            }
+        }
+
+        window.removerAssinatura = async function(id) {
+            await deletarDoFirebase('assinaturas', id);
+            window.appData.assinaturas = window.appData.assinaturas.filter(a => a.id !== id);
+            atualizarInterfaceCompleta();
+        }
+
+        window.adicionarMeta = async function(event) {
+            event.preventDefault();
+            const desc = document.getElementById('meta-desc').value;
+            const valorAlvo = parseFloat(document.getElementById('meta-valor').value);
+            const nova = { desc, valorAlvo, atual: 0 };
+
+            const id = await salvarNoFirebase('metas', nova);
+            if (id) {
+                nova.id = id;
+                window.appData.metas.push(nova);
+                document.getElementById('meta-desc').value = '';
+                document.getElementById('meta-valor').value = '';
+                atualizarInterfaceCompleta();
+                mostrarToast("Meta criada!", "sucesso");
+            }
+        }
+
+        window.removerMeta = async function(id) {
+            await deletarDoFirebase('metas', id);
+            window.appData.metas = window.appData.metas.filter(m => m.id !== id);
+            atualizarInterfaceCompleta();
+        }
+
+        // --- RENDERIZAÇÃO ---
+        function atualizarInterfaceCompleta() {
+            renderizarTransacoes();
+            renderizarContas();
+            renderizarParcelamentos();
+            renderizarAssinaturas();
+            renderizarMetas();
+            atualizarKPIs();
+            atualizarGraficos();
+            renderizarRelatorios();
+        }
+
+        function atualizarKPIs() {
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+
+            window.appData.transacoes.forEach(t => {
+                if (t.tipo === 'receita') totalReceitas += t.valor;
+                else totalDespesas += t.valor;
+            });
+
+            window.appData.assinaturas.forEach(a => totalDespesas += a.valor);
+
+            const saldo = totalReceitas - totalDespesas;
+            let totalMetas = window.appData.metas.reduce((acc, m) => acc + m.valorAlvo, 0);
+
+            document.getElementById('kpi-saldo').textContent = `R$ ${saldo.toFixed(2)}`;
+            document.getElementById('kpi-receitas').textContent = `R$ ${totalReceitas.toFixed(2)}`;
+            document.getElementById('kpi-despesas').textContent = `R$ ${totalDespesas.toFixed(2)}`;
+            document.getElementById('kpi-economia').textContent = `R$ ${totalMetas.toFixed(2)}`;
+
+            const alertaBox = document.getElementById('alertas-container');
+            if (totalReceitas > 0 && (totalDespesas / totalReceitas) > 0.8) {
+                alertaBox.classList.remove('hidden');
+                document.getElementById('alerta-texto').textContent = `Atenção: Suas despesas (R$ ${totalDespesas.toFixed(2)}) ultrapassaram 80% das suas receitas este mês!`;
+            } else {
+                alertaBox.classList.add('hidden');
+            }
+        }
+
+        function renderizarTransacoes() {
+            const tbody = document.getElementById('tabela-transacoes');
+            tbody.innerHTML = '';
+            if (window.appData.transacoes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-cyber-muted">Nenhuma transação cadastrada ainda.</td></tr>`;
+                return;
+            }
+
+            window.appData.transacoes.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-cyber-border/30 hover:bg-cyber-border/20 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-cyber-muted">${t.data || '-'}</td>
+                    <td class="py-3 px-4 font-medium text-white">${t.desc}</td>
+                    <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-full text-xs bg-cyber-purple/10 text-cyber-purple border border-cyber-purple/20">${t.categoria}</span></td>
+                    <td class="py-3 px-4"><span class="font-semibold ${t.tipo === 'receita' ? 'text-emerald-400' : 'text-rose-500'}">${t.tipo.toUpperCase()}</span></td>
+                    <td class="py-3 px-4 font-bold ${t.tipo === 'receita' ? 'text-emerald-400' : 'text-white'}">R$ ${t.valor.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="removerTransacao('${t.id}')" class="text-cyber-muted hover:text-red-400 transition p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarContas() {
+            const container = document.getElementById('lista-contas');
+            container.innerHTML = '';
+            if (window.appData.contas.length === 0) {
+                container.innerHTML = `<p class="text-sm text-cyber-muted text-center py-4">Nenhuma conta a pagar cadastrada.</p>`;
+                return;
+            }
+
+            window.appData.contas.forEach(c => {
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-xl border flex items-center justify-between ${c.pago ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-cyber-bg/40 border-cyber-border'}`;
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" ${c.pago ? 'checked' : ''} onclick="alternarContaPagar('${c.id}')" class="w-5 h-5 rounded accent-cyber-neon cursor-pointer">
+                        <div>
+                            <h4 class="text-sm font-bold ${c.pago ? 'line-through text-cyber-muted' : 'text-white'}">${c.desc}</h4>
+                            <p class="text-xs text-cyber-muted">Vencimento: ${c.vencimento}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-bold text-white">R$ ${c.valor.toFixed(2)}</span>
+                        <button onclick="removerContaPagar('${c.id}')" class="text-cyber-muted hover:text-red-400 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarParcelamentos() {
+            const container = document.getElementById('lista-parcelamentos');
+            container.innerHTML = '';
+            if (window.appData.parcelamentos.length === 0) {
+                container.innerHTML = `<p class="text-sm text-cyber-muted text-center py-4">Nenhum parcelamento registrado.</p>`;
+                return;
+            }
+
+            window.appData.parcelamentos.forEach(p => {
+                const progresso = (p.pagas / p.qtd) * 100;
+                const div = document.createElement('div');
+                div.className = "p-4 rounded-xl bg-cyber-bg/40 border border-cyber-border space-y-2";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-white">${p.desc}</h4>
+                        <span class="text-xs text-cyber-pink font-semibold">R$ ${p.valorParcela.toFixed(2)} / mês</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-cyber-muted">
+                        <span>Parcela ${p.pagas} de ${p.qtd}</span>
+                        <span>Total: R$ ${p.valorTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="w-full bg-cyber-border rounded-full h-2 overflow-hidden">
+                        <div class="bg-cyber-pink h-2 rounded-full" style="width: ${progresso}%"></div>
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button onclick="removerParcelamento('${p.id}')" class="text-xs text-red-400 hover:underline"><i class="fa-solid fa-trash mr-1"></i> Excluir</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarAssinaturas() {
+            const container = document.getElementById('lista-assinaturas');
+            container.innerHTML = '';
+            if (window.appData.assinaturas.length === 0) {
+                container.innerHTML = `<p class="text-sm text-cyber-muted text-center py-4 md:col-span-3">Nenhuma assinatura cadastrada.</p>`;
+                return;
+            }
+
+            window.appData.assinaturas.forEach(a => {
+                const div = document.createElement('div');
+                div.className = "p-4 rounded-xl bg-cyber-bg/40 border border-cyber-border flex justify-between items-center";
+                div.innerHTML = `
+                    <div>
+                        <h4 class="text-sm font-bold text-white">${a.desc}</h4>
+                        <p class="text-xs text-emerald-400 font-semibold mt-1">R$ ${a.valor.toFixed(2)} / mês</p>
+                    </div>
+                    <button onclick="removerAssinatura('${a.id}')" class="text-cyber-muted hover:text-red-400 p-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarMetas() {
+            const container = document.getElementById('lista-metas');
+            container.innerHTML = '';
+            if (window.appData.metas.length === 0) {
+                container.innerHTML = `<p class="text-sm text-cyber-muted text-center py-4">Nenhuma meta financeira cadastrada.</p>`;
+                return;
+            }
+
+            window.appData.metas.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "p-4 rounded-xl bg-cyber-bg/40 border border-cyber-border space-y-2";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-white">${m.desc}</h4>
+                        <span class="text-xs text-cyber-purple font-semibold">Alvo: R$ ${m.valorAlvo.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-end pt-1">
+                        <button onclick="removerMeta('${m.id}')" class="text-xs text-red-400 hover:underline"><i class="fa-solid fa-trash mr-1"></i> Excluir Meta</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderizarRelatorios() {
+            const container = document.getElementById('relatorio-conteudo');
+            let totalRec = window.appData.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + b.valor, 0);
+            let totalDesp = window.appData.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + b.valor, 0);
+            window.appData.assinaturas.forEach(a => totalDesp += a.valor);
+
+            let statusSaude = "Excelente 🟢";
+            let corSaude = "text-emerald-400";
+            if (totalRec > 0 && (totalDesp / totalRec) > 0.5) {
+                statusSaude = "Moderada 🟡";
+                corSaude = "text-amber-400";
+            }
+            if (totalRec > 0 && (totalDesp / totalRec) > 0.8) {
+                statusSaude = "Crítica 🔴";
+                corSaude = "text-rose-500";
+            }
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="p-4 rounded-xl bg-cyber-bg/60 border border-cyber-border">
+                        <span class="text-xs text-cyber-muted uppercase font-semibold">Saúde Financeira</span>
+                        <h4 class="text-lg font-bold ${corSaude} mt-1">${statusSaude}</h4>
+                    </div>
+                    <div class="p-4 rounded-xl bg-cyber-bg/60 border border-cyber-border">
+                        <span class="text-xs text-cyber-muted uppercase font-semibold">Total de Entradas</span>
+                        <h4 class="text-lg font-bold text-emerald-400 mt-1">R$ ${totalRec.toFixed(2)}</h4>
+                    </div>
+                    <div class="p-4 rounded-xl bg-cyber-bg/60 border border-cyber-border">
+                        <span class="text-xs text-cyber-muted uppercase font-semibold">Total de Saídas</span>
+                        <h4 class="text-lg font-bold text-rose-500 mt-1">R$ ${totalDesp.toFixed(2)}</h4>
+                    </div>
+                </div>
+                <p class="text-cyber-muted">O sistema analisa continuamente suas transações e assinaturas para manter seu orçamento equilibrado.</p>
+            `;
+        }
+
+        function atualizarGraficos() {
+            const ctxFluxo = document.getElementById('chartFluxo').getContext('2d');
+            let rec = window.appData.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + b.valor, 0);
+            let desp = window.appData.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + b.valor, 0);
+            window.appData.assinaturas.forEach(a => desp += a.valor);
+
+            if (chartFluxoInstance) chartFluxoInstance.destroy();
+            chartFluxoInstance = new Chart(ctxFluxo, {
+                type: 'bar',
+                data: {
+                    labels: ['Receitas', 'Despesas'],
+                    datasets: [{
+                        label: 'Valor (R$)',
+                        data: [rec, desp],
+                        backgroundColor: ['#10B981', '#F43F5E'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#a1a1aa' }, grid: { color: '#27272a' } },
+                        x: { ticks: { color: '#a1a1aa' }, grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctxCat = document.getElementById('chartCategorias').getContext('2d');
+            const catTotais = {};
+            window.appData.transacoes.filter(t => t.tipo === 'despesa').forEach(t => {
+                catTotais[t.categoria] = (catTotais[t.categoria] || 0) + t.valor;
+            });
+
+            const labels = Object.keys(catTotais);
+            const dataVals = Object.values(catTotais);
+
+            if (chartCatInstance) chartCatInstance.destroy();
+            chartCatInstance = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Nenhum Gasto'],
+                    datasets: [{
+                        data: dataVals.length > 0 ? dataVals : [1],
+                        backgroundColor: ['#8B5CF6', '#10B981', '#EC4899', '#3B82F6', '#F59E0B', '#6366F1', '#14B8A6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#a1a1aa', boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
